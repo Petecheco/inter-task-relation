@@ -41,6 +41,28 @@ CUDA_VISIBLE_DEVICES=1 python -m trace_cl.train_seq_lora \
   --run-name smoke_seq_lora
 ```
 
+## LAF-CL Adaptive Replay
+
+Layer-adaptive continual LoRA training uses anchors, LoRA Fisher key layers, exact gradient signatures, a scored replay buffer, and masked gradient accumulation:
+
+```bash
+CUDA_VISIBLE_DEVICES=1 python -m trace_cl.train_lafcl \
+  --config configs/trace8_qwen3_1p7b_lafcl.yaml
+```
+
+Smoke-test LAF-CL on two tasks:
+
+```bash
+CUDA_VISIBLE_DEVICES=1 python -m trace_cl.train_lafcl \
+  --config configs/trace8_qwen3_1p7b_lafcl.yaml \
+  --tasks C-STANCE,FOMC \
+  --max-train-samples 8 \
+  --max-steps 1 \
+  --run-name smoke_lafcl
+```
+
+Each stage writes `anchors.jsonl`, `fisher.json`, `key_layers.json`, `anchor_grad.pt`, `scores.jsonl`, `train_metrics.json`, and `final_adapter`; the run root writes `buffer.jsonl`, `task_stats.pt`, and `final_summary.json`.
+
 ## Manual vLLM Eval
 
 Run eval after training has finished:

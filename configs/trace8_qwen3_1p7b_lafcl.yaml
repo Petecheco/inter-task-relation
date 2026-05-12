@@ -1,0 +1,153 @@
+experiment_name: trace8_qwen3_1p7b_lafcl
+seed: 42
+
+model:
+  model_name_or_path: /data/huggingface_models/Qwen3-1.7B
+  tokenizer_name_or_path:
+  dtype: bfloat16
+  trust_remote_code: true
+  attn_implementation: sdpa
+  padding_side: right
+  chat_template_kwargs:
+    enable_thinking: false
+
+data:
+  root: /data/shengke/TRACE-Benchmark/LLM-CL-Benchmark_5000
+  prompt_field: prompt
+  response_field: answer
+  train_split: train
+  default_max_length: 2048
+
+train:
+  output_root: /data/shengke/ITR
+  num_train_epochs: 1
+  learning_rate: 0.0002
+  lr_scheduler_type: cosine
+  warmup_ratio: 0.03
+  weight_decay: 0.0
+  per_device_train_batch_size: 16
+  gradient_accumulation_steps: 4
+  gradient_checkpointing: true
+  bf16: true
+  fp16: false
+  logging_steps: 10
+  save_steps: 250
+  save_total_limit: 2
+  dataloader_num_workers: 0
+  report_to: []
+  optim: adamw_torch
+  max_steps: -1
+  overwrite_output_dir: true
+  lora:
+    r: 16
+    lora_alpha: 32
+    lora_dropout: 0.05
+    bias: none
+    task_type: CAUSAL_LM
+    target_modules:
+      - q_proj
+      - k_proj
+      - v_proj
+      - o_proj
+      - gate_proj
+      - up_proj
+      - down_proj
+
+anchor:
+  num_clusters: 8
+  anchors_per_cluster: 4
+  max_samples_for_clustering: 5000
+  feature_layer: 4
+  feature_pooling: mean
+  feature_batch_size: 8
+
+fisher:
+  top_m_layers: 8
+  normalize_by_numel: true
+  micro_batch_size: 1
+
+gradient_signature:
+  mode: exact
+  projection_dim: 2048
+  micro_batch_size: 1
+
+buffer:
+  capacity: 512
+  share_ratio: 0.3
+  per_task_balance: true
+  selection_strategy: score
+
+adaptive_training:
+  replay_ratio: 0.5
+  max_grad_norm: 1.0
+
+eval:
+  split: test
+  output_subdir: eval
+  batch_size: 128
+  max_model_len: 32768
+  dtype: bfloat16
+  temperature: 0.0
+  top_p: 1.0
+  tensor_parallel_size: 1
+  gpu_memory_utilization: 0.9
+
+tasks:
+  - name: C-STANCE
+    metric: accuracy
+    answer_type: choice
+    choices: [A, B, C]
+    max_length: 2048
+    truncation: tail
+    generate_max_tokens: 8
+
+  - name: FOMC
+    metric: accuracy
+    answer_type: choice
+    choices: [A, B, C]
+    max_length: 2048
+    truncation: tail
+    generate_max_tokens: 8
+
+  - name: MeetingBank
+    metric: rouge_l
+    answer_type: text
+    max_length: 2048
+    truncation: head_tail
+    generate_max_tokens: 1024
+
+  - name: Py150
+    metric: edit_distance
+    answer_type: code
+    max_length: 2048
+    truncation: tail
+    generate_max_tokens: 160
+
+  - name: ScienceQA
+    metric: accuracy
+    answer_type: choice
+    choices: [A, B, C, D, E]
+    max_length: 2048
+    truncation: tail
+    generate_max_tokens: 512
+
+  - name: NumGLUE-cm
+    metric: accuracy
+    answer_type: number
+    max_length: 2048
+    truncation: tail
+    generate_max_tokens: 32
+
+  - name: NumGLUE-ds
+    metric: accuracy
+    answer_type: number
+    max_length: 2048
+    truncation: tail
+    generate_max_tokens: 32
+
+  - name: 20Minuten
+    metric: sari
+    answer_type: simplification
+    max_length: 2048
+    truncation: tail
+    generate_max_tokens: 256
